@@ -128,7 +128,79 @@ final class MirrorManager: ObservableObject {
     }
 }
 
-// MARK: - Vista anteprima live (SCStream)
+// MARK: - Salto rapido globale tra gioco e chiamata (solo API pubbliche)
+
+/// Su un Mac stock non si può fissare la finestra altrui in modo interattivo,
+/// ma si può SALTARE tra app all'istante: ⌃⌥⌘M attiva l'app dell'ultimo overlay
+/// (es. la chiamata WhatsApp); ripremuto torna dove eri (es. il gioco).
+/// Richiede solo Accessibilità (concessione in Impostazioni, nessun riavvio).
+final class HotkeyManager: ObservableObject {
+    static let shared = HotkeyManager()
+
+    @Published var monitorInstalled = false
+    @Published var accessibilityOK = false
+
+    private var monitor: Any?
+    private var returnPID: pid_t?
+
+    private init() {
+        DispatchQueue.main.async { [weak self] in self?.start() }
+    }
+
+    func start() {
+        stop()
+        accessibilityOK = AXIsProcessTrusted()
+        monitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] e in
+            self?.handle(e)
+        }
+        monitorInstalled = monitor != nil
+    }
+
+    func stop() {
+        if let m = monitor { NSEvent.removeMonitor(m); monitor = nil }
+        monitorInstalled = false
+    }
+
+    func refreshTrust() {
+        accessibilityOK = AXIsProcessTrusted()
+    }
+
+    private func handle(_ e: NSEvent) {
+        let f = e.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        guard f == [.control, .option, .command],
+              e.charactersIgnoringModifiers?.lowercased() == "m" else { return }
+        jump()
+    }
+
+    /// App proprietaria dell'ultimo overlay creato (risolta al momento del salto).
+    private func currentTarget() -> pid_t? {
+        guard let m = MirrorManager.shared.mirrors.last else { return nil }
+        let list = WindowPinning.shared.listWindows()
+        if let w = list.first(where: { $0.windowNumber == m.windowNumber }) { return w.ownerPID }
+        if let bid = m.bundleID,
+           let app = NSRunningApplication.runningApplications(withBundleIdentifier: bid).first {
+            return app.processIdentifier
+        }
+        return nil
+    }
+
+    func jump() {
+        guard let target = currentTarget(),
+              let targetApp = NSRunningApplication(processIdentifier: target),
+              !targetApp.isTerminated else { return }
+        let front = NSWorkspace.shared.frontmostApplication
+        if front?.processIdentifier == target {
+            if let back = returnPID,
+               let app = NSRunningApplication(processIdentifier: back),
+               !app.isTerminated {
+                app.activate(options: [.activateAllWindows])
+            }
+        } else {
+            if let f = front { returnPID = f.processIdentifier }
+            targetApp.activate(options: [.activateAllWindows])
+        }
+    }
+}
 
 struct MirrorPanelView: View {
     @ObservedObject var manager: MirrorManager

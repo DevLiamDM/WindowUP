@@ -45,6 +45,7 @@ final class AppPinManager: ObservableObject {
         accessibilityOK = pinning.isAccessibilityTrusted()
         screenRecordingOK = CGPreflightScreenCaptureAccess()
         WatchdogManager.shared.refreshTrust()
+        HotkeyManager.shared.refreshTrust()
         let list = pinning.listWindows()
         self.windows = list
         // Nota onesta: il vero always-on-top interattivo cross-process è bloccato da macOS 15/26
@@ -96,6 +97,7 @@ struct AppWindowsView: View {
     @StateObject private var mirrors = MirrorManager.shared
     @StateObject private var terminals = TerminalManager.shared
     @StateObject private var yabai = YabaiManager.shared
+    @StateObject private var hotkey = HotkeyManager.shared
     private var pinning: WindowPinning { WindowPinning.shared }
 
     var body: some View {
@@ -137,6 +139,17 @@ struct AppWindowsView: View {
                     Button("Apri WhatsApp") { manager.openWhatsApp() }.buttonStyle(.borderedProminent)
                     Button("Aggiorna lista") { manager.refresh() }.font(.caption)
                 }
+                HStack(spacing: 8) {
+                    Text("Tasto globale ⌃⌥⌘M: salta tra gioco e chiamata").font(.caption)
+                    Spacer()
+                    if hotkey.accessibilityOK {
+                        Text(hotkey.monitorInstalled ? "attivo ✓" : "in attesa…").font(.caption).foregroundStyle(.green)
+                    } else {
+                        Button("Abilita…") { pinning.promptAccessibility() }.buttonStyle(.link).font(.caption)
+                    }
+                }
+                Text("Premi una volta: vai alla chiamata. Ripremi: torni al gioco. Funziona anche a tutto schermo, senza riavvii né SIP.")
+                    .font(.caption2).foregroundStyle(.secondary)
                 ForEach([
                     "1. Avvia la videochiamata nell'app WhatsApp nativa (camera e microfono funzionano lì).",
                     "2. Qui sotto, sulla finestra della chiamata, premi “Overlay gioco”.",
