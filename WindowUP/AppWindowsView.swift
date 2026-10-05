@@ -244,9 +244,27 @@ struct AppWindowsView: View {
                     Circle().fill(yabai.isInstalled ? .green : .gray).frame(width: 8, height: 8)
                     Text(yabai.isInstalled ? "yabai installato" : "yabai non installato").font(.caption.bold())
                     Spacer()
-                    Button("Ricontrolla") { yabai.locate() }.buttonStyle(.link).font(.caption)
+                    Button("Ricontrolla") {
+                        yabai.locate()
+                        yabai.fetchSIPStatus()
+                    }.buttonStyle(.link).font(.caption)
                     if !yabai.pinnedIDs.isEmpty {
                         Button("Sblocca tutte", role: .destructive) { yabai.unpinAll() }.buttonStyle(.link).font(.caption)
+                    }
+                }
+                HStack(spacing: 6) {
+                    Circle().fill(saColor).frame(width: 8, height: 8)
+                    Text(saText).font(.caption)
+                }
+                HStack(spacing: 6) {
+                    Circle().fill(.gray).frame(width: 8, height: 8)
+                    Text("SIP: \(yabai.sipStatus)").font(.caption).textSelection(.enabled)
+                }
+                if yabai.saOK == false {
+                    HStack(spacing: 8) {
+                        Button("Copia comando di sblocco") { yabai.copySALoadCommand() }.buttonStyle(.borderedProminent)
+                        Text("Incollalo nel Terminale, Invio, password del Mac. Se fallisce: passo Recovery nella guida sotto.")
+                            .font(.caption).foregroundStyle(.secondary)
                     }
                 }
                 if !yabai.lastMessage.isEmpty {
@@ -260,6 +278,19 @@ struct AppWindowsView: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }.padding(4)
+        }
+    }
+
+    private var saColor: Color {
+        guard let ok = yabai.saOK else { return .orange }
+        return ok ? .green : .red
+    }
+
+    private var saText: String {
+        switch yabai.saOK {
+        case nil: return "Scripting-addition: non verificata — premi “Fissa davvero” su una finestra per testarla"
+        case true?: return "Scripting-addition: attiva ✓ — il pin vero funziona"
+        case false?: return "Scripting-addition: MANCANTE — “Fissa davvero” fallisce finché non la carichi"
         }
     }
 

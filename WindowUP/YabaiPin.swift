@@ -29,6 +29,10 @@ final class YabaiManager: ObservableObject {
     @Published var pinnedIDs = Set<UInt32>() // yabai window id con sub-layer=above
     @Published var lastMessage = ""
     @Published var lastOK = true
+    /// Stato scripting-addition: nil = mai verificato, true = funziona,
+    /// false = manca (il pin vero fallisce). Verificato solo provando.
+    @Published var saOK: Bool? = nil
+    @Published var sipStatus: String = "lettura…"
 
     /// Cache letta dalle view: scritta e letta solo dal main thread.
     private var cache: [YabWin] = []
@@ -40,6 +44,7 @@ final class YabaiManager: ObservableObject {
 
     private init() {
         locate()
+        fetchSIPStatus()
         DispatchQueue.main.async { [weak self] in self?.startAutoRefresh() }
     }
 
@@ -83,6 +88,32 @@ final class YabaiManager: ObservableObject {
             return out
         }
         return nil
+    }
+
+    // MARK: - Diagnostica (async)
+
+    /// Legge `csrutil status` in background (non richiede sudo).
+    func fetchSIPStatus() {
+        workQueue.async { [weak self] in
+            let t = Process()
+            t.executableURL = URL(fileURLWithPath: "/usr/bin/csrutil")
+            t.arguments = ["status"]
+            let pipe = Pipe()
+            t.standardOutput = pipe
+            t.standardError = FileHandle.nullDevice
+            try? t.run()
+            t.waitUntilExit()
+            let out = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+            let first = out.split(separator: "\n").first.map(String.init) ?? "sconosciuto"
+            DispatchQueue.main.async { [weak self] in self?.sipStatus = first }
+        }
+    }
+
+    /// Copia negli appunti il comando per caricare lo scripting-addition.
+    func copySALoadCommand() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString("sudo yabai --load-sa", forType: .string)
+        note("comando copiato: incollalo nel Terminale e dai Invio", ok: true)
     }
 
     // MARK: - Refresh periodico (async)
@@ -210,6 +241,7 @@ final class YabaiManager: ObservableObject {
                     self.cache = fresh
                     self.cacheDate = Date()
                     self.pinnedIDs = Set(fresh.filter { $0.subLayer == "above" }.map(\.id))
+                    self.saOK = true // il comando sub-layer ha funzionato
                     if self.pinnedIDs.contains(m.id) {
                         RingOverlay.shared.show(pid: w.ownerPID, wid: w.windowNumber)
                         self.note("\(w.ownerName): FISSATA davvero sopra ✓", ok: true)
@@ -221,7 +253,8 @@ final class YabaiManager: ObservableObject {
                 return
             }
             let msg = r.err.isEmpty ? r.out : r.err
-            if msg.contains("System Integrity Protection") || msg.contains("scripting-addition") || r.code != 0 {
+            if msg.contains("System Integrity Protection") || msg.contains("scripting-addition") {
+                self.saOK = false
                 self.note("Serve lo scripting-addition (passo SIP in Recovery): \(msg.prefix(140))", ok: false)
             } else {
                 self.note("yabai: \(msg.prefix(160))", ok: false)
