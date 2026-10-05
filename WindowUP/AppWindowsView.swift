@@ -1,0 +1,331 @@
+import SwiftUI
+import AppKit
+
+final class AppPinManager: ObservableObject {
+    static let shared = AppPinManager()
+
+    @Published var windows: [AppWindowInfo] = []
+    @Published var lastError: String?
+    @Published var accessibilityOK: Bool = false
+    @Published var screenRecordingOK: Bool = false
+
+    private var timer: Timer?
+    private var retainCount = 0
+    private let pinning = WindowPinning.shared
+
+    /// Timer condiviso tra i tab: parte con il primo retain, si ferma all'ultimo release.
+    func retainRefresh() {
+        retainCount += 1
+        if timer == nil { startAutoRefresh() }
+        else { refresh() }
+    }
+
+    func releaseRefresh() {
+        retainCount = max(0, retainCount - 1)
+        if retainCount == 0 { stopAutoRefresh() }
+    }
+
+    func startAutoRefresh() {
+        stopAutoRefresh()
+        refresh()
+        timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
+            self?.refresh()
+        }
+        if let t = timer {
+            RunLoop.main.add(t, forMode: .common)
+        }
+    }
+
+    func stopAutoRefresh() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    func refresh() {
+        accessibilityOK = pinning.isAccessibilityTrusted()
+        screenRecordingOK = CGPreflightScreenCaptureAccess()
+        WatchdogManager.shared.refreshTrust()
+        let list = pinning.listWindows()
+        self.windows = list
+        // Nota onesta: il vero always-on-top interattivo cross-process è bloccato da macOS 15/26
+        // (CGSSetWindowLevel no-op verificato su 26.2). Offriamo sticker live via ScreenCaptureKit.
+    }
+
+    // MARK: - Apertura app
+
+    func openTerminal() { pinning.launchApp(bundleID: "com.apple.Terminal", fallbackName: "Terminal") }
+    func openVSCode() { pinning.launchApp(bundleID: "com.microsoft.VSCode", fallbackName: "Visual Studio Code") }
+    func openNotes() { pinning.launchApp(bundleID: "com.apple.Notes", fallbackName: "Notes") }
+    func openActivityMonitor() { pinning.launchApp(bundleID: "com.apple.ActivityMonitor", fallbackName: "Activity Monitor") }
+
+    func chooseApp() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedFileTypes = ["app"]
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.prompt = "Apri"
+        if panel.runModal() == .OK, let url = panel.url {
+            let cfg = NSWorkspace.OpenConfiguration()
+            NSWorkspace.shared.openApplication(at: url, configuration: cfg, completionHandler: nil)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                self?.refresh()
+            }
+        }
+    }
+
+    func activate(_ w: AppWindowInfo) {
+        pinning.activate(pid: w.ownerPID)
+    }
+
+    func preview(_ w: AppWindowInfo) {
+        MirrorManager.shared.createMirror(for: w)
+    }
+}
+
+struct AppWindowsView: View {
+    @StateObject private var manager = AppPinManager.shared
+    @StateObject private var mirrors = MirrorManager.shared
+    @StateObject private var terminals = TerminalManager.shared
+    @StateObject private var yabai = YabaiManager.shared
+    private var pinning: WindowPinning { WindowPinning.shared }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                honestBanner
+                permissions
+                quickLaunch
+                embeddedTerminalSection
+                yabaiPinSection
+                yabaiGuide
+                activeMirrors
+                windowList
+            }
+            .padding(20)
+        }
+        .onAppear { manager.retainRefresh() }
+        .onDisappear { manager.releaseRefresh() }
+    }
+
+    private var honestBanner: some View {
+        GroupBox("App native: come funziona") {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Verificato su questo Mac: macOS ignora qualsiasi tentativo di tenere sopra la finestra di un'altra app (CGS cross-process no-op, raise AX accettato ma inefficace). Per questo WindowUP! usa la stessa tecnica di Floaty: **sticker live** (ScreenCaptureKit ~15fps) in pannelli propri + click per tornare alla finestra vera.")
+                    .font(.callout)
+                Text("Strade che funzionano: **Terminale integrato** qui sotto (finestra nostra: sopra garantito e interattivo), **anteprime live** (solo vista) + Vai alla finestra, oppure **yabai+SIP** per il pin vero di qualsiasi app (vedi guida sotto). I siti web nel tab accanto restano interattivi.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }.padding(4)
+        }
+    }
+
+    private var yabaiGuide: some View {
+        GroupBox("Pin vero di qualsiasi app — via yabai (avanzato)") {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("L'unico modo per tenere davvero sopra una finestra altrui e interattiva (VS Code, Packet Tracer…) è yabai, che si inietta nel Dock: richiede di allentare parzialmente SIP. Procedura:")
+                    .font(.callout)
+                ForEach([
+                    "1. Installa: brew install koekeishiya/formulae/yabai",
+                    "2. Riavvia in Recovery (tieni premuto il tasto di accensione), apri Terminale e dai: csrutil enable --without fs --without debug --without nvram",
+                    "3. Riavvia normale e dai: nvram boot-args=-arm64e_preview_abi (Apple Silicon) + sudo yabai --load-sa",
+                    "4. Avvia il servizio: yabai --start-service (oppure tienilo aperto in un Terminale)",
+                    "5. Fissa la finestra: selezionala qui sopra e premi Fissa davvero (yabai: sub-layer above)"
+                ], id: \.self) { step in
+                    Text(step).font(.caption).textSelection(.enabled)
+                }
+                Text("Contro: va rifatto/ricontrollato a ogni aggiornamento macOS e abbassa una protezione di sistema. Guida ufficiale: github.com/koekeishiya/yabai/wiki")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }.padding(4)
+        }
+    }
+
+    private var permissions: some View {
+        GroupBox("Permessi") {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Circle().fill(manager.screenRecordingOK ? .green : .red).frame(width: 8, height: 8)
+                    Text(manager.screenRecordingOK ? "Registrazione schermo: OK (sticker live attivi)" : "Registrazione schermo: da abilitare (serve per gli sticker live)")
+                        .font(.caption)
+                    Spacer()
+                    Button("Apri Impostazioni") { pinning.openScreenRecordingSettings() }.buttonStyle(.link).font(.caption)
+                }
+                if !manager.windows.isEmpty && !pinning.hasWindowTitles(in: manager.windows) {
+                    Text("Titoli nascosti: abilita Registrazione schermo per WindowUP! e premi Aggiorna.")
+                        .font(.caption).foregroundStyle(.orange)
+                }
+                if let err = manager.lastError {
+                    Text(err).font(.caption).foregroundStyle(.red)
+                }
+                Text("Accessibilità non più richiesta: il watchdog è stato rimosso (macOS lo rende inefficace).")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }.padding(4)
+        }
+    }
+
+    private var quickLaunch: some View {
+        GroupBox("Apri app") {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Button("Terminale") { manager.openTerminal(); later() }.buttonStyle(.bordered)
+                    Button("VS Code") { manager.openVSCode(); later() }.buttonStyle(.bordered)
+                    Button("Note") { manager.openNotes(); later() }.buttonStyle(.bordered)
+                    Button("Monitoraggio Attività") { manager.openActivityMonitor(); later() }.buttonStyle(.bordered)
+                    Button("Scegli app…") { manager.chooseApp() }
+                    Spacer()
+                    Button("Aggiorna lista") { manager.refresh() }.font(.caption)
+                }
+                Text("Apri l'app, poi premi Anteprima live dalla lista qui sotto. L'anteprima resta sopra Chrome/Safari; per scriverci premi Vai alla finestra.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }.padding(4)
+        }
+    }
+
+    private var embeddedTerminalSection: some View {
+        GroupBox("Terminale integrato — resta sopra davvero") {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Button("Apri terminale") { terminals.openTerminal() }.buttonStyle(.borderedProminent)
+                    Text("\(terminals.sessions.count) aperti").font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                }
+                if !terminals.sessions.isEmpty {
+                    ForEach(terminals.sessions) { s in
+                        HStack {
+                            Circle().fill(s.alive ? .green : .gray).frame(width: 8, height: 8)
+                            Text("zsh • \(s.sizeLabel)").font(.caption)
+                            Spacer()
+                            Button("Mostra") { terminals.focus(s) }.buttonStyle(.link)
+                            Button("Chiudi", role: .destructive) { terminals.close(s) }.buttonStyle(.link)
+                        }.font(.caption)
+                    }
+                }
+                Text("Shell vera dentro WindowUP: resta sopra garantito perché è finestra nostra. Spostabile, ridimensionabile, Ctrl+C / Ctrl+Z funzionano.")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }.padding(4)
+        }
+    }
+
+    private var yabaiPinSection: some View {
+        GroupBox("Pin vero — via yabai") {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Circle().fill(yabai.isInstalled ? .green : .gray).frame(width: 8, height: 8)
+                    Text(yabai.isInstalled ? "yabai installato" : "yabai non installato").font(.caption.bold())
+                    Spacer()
+                    Button("Ricontrolla") { yabai.locate() }.buttonStyle(.link).font(.caption)
+                    if !yabai.pinnedIDs.isEmpty {
+                        Button("Sblocca tutte", role: .destructive) { yabai.unpinAll() }.buttonStyle(.link).font(.caption)
+                    }
+                }
+                if !yabai.lastMessage.isEmpty {
+                    Text(yabai.lastMessage).font(.caption).foregroundStyle(yabai.lastOK ? .green : .red)
+                }
+                if !yabai.isInstalled {
+                    Text("Installazione in corso o mancante: vedi guida sotto.")
+                        .font(.caption).foregroundStyle(.secondary)
+                } else if yabai.pinnedIDs.isEmpty {
+                    Text("Usa il bottone Fissa a fianco di una finestra qui sotto: resta sopra davvero finché non la sblocchi.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }.padding(4)
+        }
+    }
+
+    private var activeMirrors: some View {
+        GroupBox("Anteprime live attive (\(mirrors.mirrors.count))") {
+            VStack(spacing: 6) {
+                if mirrors.mirrors.isEmpty {
+                    Text("Nessuna anteprima. Fissa Terminale o VS Code dalla lista per tenerli d'occhio mentre navighi.")
+                        .font(.callout).foregroundStyle(.secondary).padding(4)
+                } else {
+                    ForEach(mirrors.mirrors) { m in
+                        HStack {
+                            Text("👁 \(m.titleSnapshot)").font(.headline).lineLimit(1)
+                            Spacer()
+                            Button("Mostra") { mirrors.focus(id: m.id) }.buttonStyle(.link)
+                            Button("Vai alla finestra") { mirrors.goToRealWindow(m) }.buttonStyle(.link)
+                            Button("Chiudi", role: .destructive) { mirrors.close(id: m.id) }.buttonStyle(.link)
+                        }.font(.caption)
+                        Divider()
+                    }
+                    HStack {
+                        Button("Chiudi tutte", role: .destructive) { mirrors.closeAll() }.font(.caption)
+                        Spacer()
+                    }
+                }
+            }.padding(4)
+        }
+    }
+
+    private var windowList: some View {
+        GroupBox("Finestre sullo schermo (\(manager.windows.count))") {
+            VStack(spacing: 0) {
+                if manager.windows.isEmpty {
+                    Text("Nessuna finestra trovata. Apri Terminale o VS Code e premi Aggiorna lista.")
+                        .font(.callout).foregroundStyle(.secondary).padding()
+                } else {
+                    ForEach(manager.windows) { w in
+                        windowRow(w)
+                        Divider()
+                    }
+                }
+            }.padding(4)
+        }
+    }
+
+    private func windowRow(_ w: AppWindowInfo) -> some View {
+        HStack(spacing: 10) {
+            appIcon(pid: w.ownerPID)
+                .frame(width: 28, height: 28)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(w.ownerName).font(.headline)
+                Text(windowSubtitle(w)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                Text("\(Int(w.bounds.width))×\(Int(w.bounds.height)) • id \(w.windowNumber)")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+            Spacer()
+            VStack(spacing: 4) {
+                if isMirrored(w) {
+                    Button("In anteprima ✓") { manager.preview(w) }.buttonStyle(.bordered)
+                } else {
+                    Button("Anteprima live") { manager.preview(w) }.buttonStyle(.borderedProminent)
+                }
+                if yabai.isInstalled {
+                    let yid = yabai.match(w).map(\.id)
+                    if let yid = yid, yabai.isPinned(yabaiID: yid) {
+                        Button("Fissata ✓") { yabai.toggle(w) }.buttonStyle(.bordered)
+                    } else {
+                        Button(yid == nil ? "Fissa (n/d)" : "Fissa davvero") { yabai.toggle(w) }.buttonStyle(.borderedProminent)
+                    }
+                }
+                Button("Attiva") { manager.activate(w) }.buttonStyle(.link)
+            }.font(.caption)
+        }
+        .padding(.vertical, 6)
+    }
+
+    private func isMirrored(_ w: AppWindowInfo) -> Bool {
+        mirrors.mirrors.contains { $0.windowNumber == w.windowNumber }
+    }
+
+    private func windowSubtitle(_ w: AppWindowInfo) -> String {
+        let t = w.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !t.isEmpty { return t }
+        if let b = w.bundleID { return b }
+        return "pid \(w.ownerPID)"
+    }
+
+    private func appIcon(pid: pid_t) -> Image {
+        if let ns = pinning.icon(forPID: pid) {
+            return Image(nsImage: ns)
+        }
+        return Image(systemName: "app.window.on.rectangle")
+    }
+
+    private func later() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            manager.refresh()
+        }
+    }
+}

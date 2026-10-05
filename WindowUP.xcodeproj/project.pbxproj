@@ -1,0 +1,314 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B1B2C3D4E5F6000100000001 /* WindowUPApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F6000100000001 /* WindowUPApp.swift */; };
+		B1B2C3D4E5F6000200000001 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F6000200000001 /* Models.swift */; };
+		B1B2C3D4E5F6000300000001 /* PanelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F6000300000001 /* PanelManager.swift */; };
+		B1B2C3D4E5F6000400000001 /* FloatingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F6000400000001 /* FloatingPanel.swift */; };
+		B1B2C3D4E5F6000500000001 /* FloatingWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F6000500000001 /* FloatingWebView.swift */; };
+		B1B2C3D4E5F6000600000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F6000600000001 /* ContentView.swift */; };
+		B1B2C3D4E5F6000700000001 /* WindowPinning.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F6000800000001 /* WindowPinning.swift */; };
+		B1B2C3D4E5F6000800000001 /* AppWindowsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F6000900000001 /* AppWindowsView.swift */; };
+		B1B2C3D4E5F6000900000001 /* MirrorManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F6000A0000001 /* MirrorManager.swift */; };
+		B1B2C3D4E5F6000A0000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F6000B0000001 /* Assets.xcassets */; };
+		B1B2C3D4E5F6000B0000001 /* VTTerminal.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F6000C0000001 /* VTTerminal.swift */; };
+		B1B2C3D4E5F6000C0000001 /* EmbeddedTerminal.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F6000D0000001 /* EmbeddedTerminal.swift */; };
+		B1B2C3D4E5F6000D0000001 /* SCMirror.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F6000E0000001 /* SCMirror.swift */; };
+		B1B2C3D4E5F6000E0000001 /* YabaiPin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F6000F0000001 /* YabaiPin.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A1B2C3D4E5F6000700000001 /* WindowUP.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "WindowUP.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		F1F2C3D4E5F6000100000001 /* WindowUPApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WindowUPApp.swift"; sourceTree = "<group>"; };
+		F1F2C3D4E5F6000200000001 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Models.swift"; sourceTree = "<group>"; };
+		F1F2C3D4E5F6000300000001 /* PanelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PanelManager.swift"; sourceTree = "<group>"; };
+		F1F2C3D4E5F6000400000001 /* FloatingPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FloatingPanel.swift"; sourceTree = "<group>"; };
+		F1F2C3D4E5F6000500000001 /* FloatingWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FloatingWebView.swift"; sourceTree = "<group>"; };
+		F1F2C3D4E5F6000600000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentView.swift"; sourceTree = "<group>"; };
+		F1F2C3D4E5F6000800000001 /* WindowPinning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WindowPinning.swift"; sourceTree = "<group>"; };
+		F1F2C3D4E5F6000900000001 /* AppWindowsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppWindowsView.swift"; sourceTree = "<group>"; };
+		F1F2C3D4E5F6000A0000001 /* MirrorManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MirrorManager.swift"; sourceTree = "<group>"; };
+		F1F2C3D4E5F6000B0000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
+		F1F2C3D4E5F6000C0000001 /* VTTerminal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VTTerminal.swift"; sourceTree = "<group>"; };
+		F1F2C3D4E5F6000D0000001 /* EmbeddedTerminal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EmbeddedTerminal.swift"; sourceTree = "<group>"; };
+		F1F2C3D4E5F6000E0000001 /* SCMirror.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SCMirror.swift"; sourceTree = "<group>"; };
+		F1F2C3D4E5F6000F0000001 /* YabaiPin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "YabaiPin.swift"; sourceTree = "<group>"; };
+		F1F2C3D4E5F6000700000001 /* WindowUP.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "WindowUP.entitlements"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A1B2C3D4E5F6000900000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A1B2C3D4E5F6000200000001 = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F6000500000001 /* WindowUP */,
+				A1B2C3D4E5F6000300000001 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F6000300000001 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F6000700000001 /* WindowUP.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F6000500000001 /* WindowUP */ = {
+			isa = PBXGroup;
+			children = (
+				F1F2C3D4E5F6000100000001 /* WindowUPApp.swift */,
+				F1F2C3D4E5F6000200000001 /* Models.swift */,
+				F1F2C3D4E5F6000300000001 /* PanelManager.swift */,
+				F1F2C3D4E5F6000400000001 /* FloatingPanel.swift */,
+				F1F2C3D4E5F6000500000001 /* FloatingWebView.swift */,
+				F1F2C3D4E5F6000600000001 /* ContentView.swift */,
+				F1F2C3D4E5F6000800000001 /* WindowPinning.swift */,
+				F1F2C3D4E5F6000900000001 /* AppWindowsView.swift */,
+				F1F2C3D4E5F6000A0000001 /* MirrorManager.swift */,
+				F1F2C3D4E5F6000B0000001 /* Assets.xcassets */,
+				F1F2C3D4E5F6000C0000001 /* VTTerminal.swift */,
+				F1F2C3D4E5F6000D0000001 /* EmbeddedTerminal.swift */,
+				F1F2C3D4E5F6000E0000001 /* SCMirror.swift */,
+				F1F2C3D4E5F6000F0000001 /* YabaiPin.swift */,
+				F1F2C3D4E5F6000700000001 /* WindowUP.entitlements */,
+			);
+			path = WindowUP;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A1B2C3D4E5F6000600000001 /* WindowUP */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1B2C3D4E5F6000C0000001 /* Build configuration list for PBXNativeTarget "WindowUP" */;
+			buildPhases = (
+				A1B2C3D4E5F6000800000001 /* Sources */,
+				A1B2C3D4E5F6000900000001 /* Frameworks */,
+				A1B2C3D4E5F6000A0000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = WindowUP;
+			productName = WindowUP;
+			productReference = A1B2C3D4E5F6000700000001 /* WindowUP.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A1B2C3D4E5F6000100000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A1B2C3D4E5F6000600000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = A1B2C3D4E5F6000B0000001 /* Build configuration list for PBXProject "WindowUP" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = it;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				it,
+				Base,
+			);
+			mainGroup = A1B2C3D4E5F6000200000001;
+			productRefGroup = A1B2C3D4E5F6000300000001 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A1B2C3D4E5F6000600000001 /* WindowUP */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A1B2C3D4E5F6000A0000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B1B2C3D4E5F6000A0000001 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A1B2C3D4E5F6000800000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B1B2C3D4E5F6000100000001 /* WindowUPApp.swift in Sources */,
+				B1B2C3D4E5F6000200000001 /* Models.swift in Sources */,
+				B1B2C3D4E5F6000300000001 /* PanelManager.swift in Sources */,
+				B1B2C3D4E5F6000400000001 /* FloatingPanel.swift in Sources */,
+				B1B2C3D4E5F6000500000001 /* FloatingWebView.swift in Sources */,
+				B1B2C3D4E5F6000600000001 /* ContentView.swift in Sources */,
+				B1B2C3D4E5F6000700000001 /* WindowPinning.swift in Sources */,
+				B1B2C3D4E5F6000800000001 /* AppWindowsView.swift in Sources */,
+				B1B2C3D4E5F6000900000001 /* MirrorManager.swift in Sources */,
+				B1B2C3D4E5F6000B0000001 /* VTTerminal.swift in Sources */,
+				B1B2C3D4E5F6000C0000001 /* EmbeddedTerminal.swift in Sources */,
+				B1B2C3D4E5F6000D0000001 /* SCMirror.swift in Sources */,
+				B1B2C3D4E5F6000E0000001 /* YabaiPin.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A1B2C3D4E5F6000D0000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A1B2C3D4E5F6000E0000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		A1B2C3D4E5F6000F0000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "WindowUP/WindowUP.entitlements";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "WindowUP!";
+				INFOPLIST_KEY_LSMinimumSystemVersion = 13.0;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "WindowUP puo attivare le app che vuoi fissare sopra (Terminale, VS Code, ecc.).";
+				INFOPLIST_KEY_NSHighResolutionCapable = YES;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "WindowUP mostra titoli e anteprime delle finestre per farti scegliere cosa fissare sopra.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.windowup.app";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5;
+			};
+			name = Debug;
+		};
+		A1B2C3D4E5F600100000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "WindowUP!";
+				INFOPLIST_KEY_LSMinimumSystemVersion = 13.0;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "WindowUP puo attivare le app che vuoi fissare sopra (Terminale, VS Code, ecc.).";
+				INFOPLIST_KEY_NSHighResolutionCapable = YES;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "WindowUP mostra titoli e anteprime delle finestre per farti scegliere cosa fissare sopra.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.windowup.app";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A1B2C3D4E5F6000B0000001 /* Build configuration list for PBXProject "WindowUP" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1B2C3D4E5F6000D0000001 /* Debug */,
+				A1B2C3D4E5F6000E0000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1B2C3D4E5F6000C0000001 /* Build configuration list for PBXNativeTarget "WindowUP" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1B2C3D4E5F6000F0000001 /* Debug */,
+				A1B2C3D4E5F600100000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A1B2C3D4E5F6000100000001 /* Project object */;
+}
