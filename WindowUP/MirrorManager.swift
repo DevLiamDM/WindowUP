@@ -26,7 +26,10 @@ final class MirrorManager: ObservableObject {
     private var panels: [UUID: FloatingPanel] = [:]
     private let pinning = WindowPinning.shared
 
-    func createMirror(for window: AppWindowInfo) {
+    /// Crea un overlay live della finestra di un'altra app.
+    /// - Parameter boosted: se true parte già in Extra-sopra (`.screenSaver`),
+    ///   pensato per restare visibile sopra i giochi fullscreen.
+    func createMirror(for window: AppWindowInfo, boosted: Bool = false) {
         // Evita duplicati sulla stessa finestra
         if mirrors.contains(where: { $0.windowNumber == window.windowNumber }) {
             if let m = mirrors.first(where: { $0.windowNumber == window.windowNumber }) {
@@ -51,7 +54,8 @@ final class MirrorManager: ObservableObject {
             ownerName: window.ownerName,
             bundleID: window.bundleID,
             titleSnapshot: String(label.prefix(80)),
-            width: w, height: h
+            width: w, height: h,
+            levelBoosted: boosted
         )
         mirrors.append(mirror)
         showPanel(for: mirror)

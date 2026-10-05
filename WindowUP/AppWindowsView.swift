@@ -82,6 +82,13 @@ final class AppPinManager: ObservableObject {
     func preview(_ w: AppWindowInfo) {
         MirrorManager.shared.createMirror(for: w)
     }
+
+    /// Overlay già in Extra-sopra per i giochi fullscreen.
+    func previewBoosted(_ w: AppWindowInfo) {
+        MirrorManager.shared.createMirror(for: w, boosted: true)
+    }
+
+    func openWhatsApp() { pinning.launchApp(named: "WhatsApp") }
 }
 
 struct AppWindowsView: View {
@@ -96,6 +103,7 @@ struct AppWindowsView: View {
             VStack(alignment: .leading, spacing: 14) {
                 honestBanner
                 permissions
+                callOverlayGuide
                 quickLaunch
                 embeddedTerminalSection
                 yabaiPinSection
@@ -116,6 +124,29 @@ struct AppWindowsView: View {
                     .font(.callout)
                 Text("Strade che funzionano: **Terminale integrato** qui sotto (finestra nostra: sopra garantito e interattivo), **anteprime live** (solo vista) + Vai alla finestra, oppure **yabai+SIP** per il pin vero di qualsiasi app (vedi guida sotto). I siti web nel tab accanto restano interattivi.")
                     .font(.caption).foregroundStyle(.secondary)
+            }.padding(4)
+        }
+    }
+
+    private var callOverlayGuide: some View {
+        GroupBox("Videochiamate sopra i giochi (WhatsApp, Meet…)") {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Le videochiamate NON vivono nei pannelli web: WKWebView su macOS non ha accesso a camera/microfono (limite Apple). Procedura corretta: chiamata nell'app nativa + overlay live sopra il gioco.")
+                    .font(.callout)
+                HStack(spacing: 8) {
+                    Button("Apri WhatsApp") { manager.openWhatsApp() }.buttonStyle(.borderedProminent)
+                    Button("Aggiorna lista") { manager.refresh() }.font(.caption)
+                }
+                ForEach([
+                    "1. Avvia la videochiamata nell'app WhatsApp nativa (camera e microfono funzionano lì).",
+                    "2. Qui sotto, sulla finestra della chiamata, premi “Overlay gioco”.",
+                    "3. L'overlay parte già in Extra-sopra: resta visibile anche sopra i giochi fullscreen. Attiva “Click-through” se copre il mirino.",
+                    "4. Audio e microfono passano dall'app nativa; per chiudere/riattivare usa “Vai alla finestra”."
+                ], id: \.self) { step in
+                    Text(step).font(.caption).foregroundStyle(.secondary)
+                }
+                Text("Nota: i giochi in fullscreen esclusivo (display-capture) non ammettono overlay di nessuno — usa la modalità finestra senza bordi.")
+                    .font(.caption2).foregroundStyle(.secondary)
             }.padding(4)
         }
     }
@@ -291,6 +322,8 @@ struct AppWindowsView: View {
                 } else {
                     Button("Anteprima live") { manager.preview(w) }.buttonStyle(.borderedProminent)
                 }
+                Button("Overlay gioco") { manager.previewBoosted(w) }.buttonStyle(.borderedProminent)
+                    .help("Riquadro live già in Extra-sopra: resta visibile anche sopra i giochi fullscreen")
                 if yabai.isInstalled {
                     let yid = yabai.match(w).map(\.id)
                     if let yid = yid, yabai.isPinned(yabaiID: yid) {

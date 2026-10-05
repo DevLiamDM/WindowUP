@@ -295,8 +295,10 @@ final class TerminalManager: ObservableObject {
     func openTerminal() {
         let session = TerminalSession()
         sessions.append(session)
+        // Extra-sopra di default: il terminale integrato deve restare visibile
+        // anche sopra giochi fullscreen e navigazione.
         var geom = PinnedItem(title: "Terminale", urlString: "", width: 640, height: 420,
-                              opacity: 1.0, levelBoosted: false)
+                              opacity: 1.0, levelBoosted: true)
         geom.joinAllSpaces = true
         let content = EmbeddedTerminalPanelView(manager: self, session: session)
         let hosting = NSHostingView(rootView: content.environmentObject(self))
