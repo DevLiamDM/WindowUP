@@ -25,6 +25,13 @@ struct AppWindowInfo: Identifiable, Equatable {
 
 /// Rende la finestra DI UN'ALTRA APP sempre in primo piano via CGSSetWindowLevel.
 /// API private: caricate con dlopen/dlsym + fallback CGS->SLS, mai linkate staticamente.
+///
+/// LEGACY (non più usato per il pin): su macOS 15/26 il set cross-process è
+/// no-op verificato — il window server ignora i cambi di livello da un'altra
+/// connessione. Tenuto solo per diagnostica `currentLevel` / `isPinned`.
+/// Il pin vero ora è: overlay nostri (FloatingPanel a livello screenSaver/
+/// maximum + canJoinAllSpaces + stationary + fullScreenAuxiliary, nonactivating,
+/// heartbeat passivo) oppure yabai per l'interattivo nativo.
 final class WindowPinning {
     static let shared = WindowPinning()
 
@@ -607,7 +614,7 @@ final class RingView: NSView {
 
 final class RingOverlay {
     static let shared = RingOverlay()
-    private var panels: [String: NSPanel] = [:] // chiave "pid-wid"
+    private var panels: [String: NSWindow] = [:] // chiave "pid-wid"
     private var timer: Timer?
 
     static func key(pid: pid_t, wid: UInt32?) -> String {
@@ -617,16 +624,16 @@ final class RingOverlay {
     func show(pid: pid_t, wid: UInt32?) {
         let key = RingOverlay.key(pid: pid, wid: wid)
         guard panels[key] == nil else { return }
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
-                            styleMask: [.borderless, .nonactivatingPanel],
-                            backing: .buffered, defer: false)
+        // NSWindow (non NSPanel): non si nasconde mai al deactivate.
+        let panel = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
+                             styleMask: [.borderless, .nonactivatingPanel],
+                             backing: .buffered, defer: false)
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = false
         panel.ignoresMouseEvents = true
         panel.level = .screenSaver
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
-        panel.hidesOnDeactivate = false
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         panel.isReleasedWhenClosed = false
         let v = RingView(frame: NSRect(x: 0, y: 0, width: 200, height: 200))
         v.autoresizingMask = [.width, .height]

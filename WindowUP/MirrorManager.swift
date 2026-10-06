@@ -1,8 +1,9 @@
 import SwiftUI
 import AppKit
 import CoreGraphics
+import ScreenCaptureKit
 
-// MARK: - Modello anteprima live (view-only)
+// MARK: - Modello anteprima live (metodo Floaty: mirror interattivo via passthrough)
 
 struct MirrorPin: Identifiable, Equatable {
     var id: UUID = UUID()
@@ -13,39 +14,42 @@ struct MirrorPin: Identifiable, Equatable {
     var width: Double
     var height: Double
     var opacity: Double = 1.0
+    /// false = interattivo (default: click/scrittura/trascinamento inoltrati);
+    /// true = passthrough overlay (mai focus, per i giochi).
     var clickThrough: Bool = false
     var levelBoosted: Bool = false
 }
 
-// MARK: - Manager anteprime
+// MARK: - Manager anteprime (mirror Floaty, niente Recovery/SIP)
 
 final class MirrorManager: ObservableObject {
     static let shared = MirrorManager()
 
     @Published var mirrors: [MirrorPin] = []
-    private var panels: [UUID: FloatingPanel] = [:]
+    @Published var statuses: [UUID: String] = [:]
+    @Published var needsScreenRecording = false
+    @Published var lastError: String?
+    private var panels: [UUID: FloatyPanel] = [:]
+    private var pending: Set<UInt32> = []
     private let pinning = WindowPinning.shared
 
-    /// Crea un overlay live della finestra di un'altra app.
-    /// - Parameter boosted: se true parte già in Extra-sopra (`.screenSaver`),
-    ///   pensato per restare visibile sopra i giochi fullscreen.
+    /// Crea un mirror stile Floaty della finestra di un'altra app.
+    /// - Parameter boosted: se true parte già in Extra-sopra (`.screenSaver`).
     func createMirror(for window: AppWindowInfo, boosted: Bool = false) {
-        // Evita duplicati sulla stessa finestra
+        // Evita duplicati sulla stessa finestra (anche mentre risolve SCWindow)
         if mirrors.contains(where: { $0.windowNumber == window.windowNumber }) {
             if let m = mirrors.first(where: { $0.windowNumber == window.windowNumber }) {
                 focus(id: m.id)
             }
             return
         }
+        guard !pending.contains(window.windowNumber) else { return }
+        pending.insert(window.windowNumber)
+        ensurePermissions()
+
         var w = window.bounds.width
         var h = window.bounds.height
         if w < 10 || h < 10 { w = 480; h = 360 }
-        // Scala contenuta per lo schermo
-        let maxW = 640.0
-        let maxH = 560.0
-        let scale = min(1.0, min(maxW / w, maxH / h))
-        w *= scale; h *= scale
-        w = max(280, min(900, w)); h = max(220, min(750, h))
 
         let title = window.title.trimmingCharacters(in: .whitespacesAndNewlines)
         let label = title.isEmpty ? window.ownerName : "\(window.ownerName) — \(title)"
@@ -55,31 +59,91 @@ final class MirrorManager: ObservableObject {
             bundleID: window.bundleID,
             titleSnapshot: String(label.prefix(80)),
             width: w, height: h,
+            // Extra/overlay-gioco = passthrough (mai focus, gioco al sicuro).
+            // Normale = interattivo (click/scrittura/trascinamento inoltrati).
+            clickThrough: boosted,
             levelBoosted: boosted
         )
         mirrors.append(mirror)
-        showPanel(for: mirror)
+        statuses[mirror.id] = "connessione…"
+        objectWillChange.send()
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.pending.remove(window.windowNumber) }
+            guard let scWin = await self.resolveSCWindow(wid: window.windowNumber) else {
+                self.statuses[mirror.id] = "finestra non trovata"
+                self.lastError = "Finestra \(window.windowNumber) non esposta a ScreenCaptureKit (chiusa o minimizzata?)."
+                return
+            }
+            self.showFloatyPanel(for: mirror, scWindow: scWin)
+        }
+    }
+
+    /// Risolve il CGWindowID in SCWindow (serve per SCContentFilter desktopIndependentWindow).
+    @MainActor
+    private func resolveSCWindow(wid: UInt32) async -> SCWindow? {
+        do {
+            let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
+            return content.windows.first(where: { $0.windowID == CGWindowID(wid) })
+        } catch {
+            let code = (error as NSError).code
+            if code == -3801 || code == -3802 {
+                needsScreenRecording = true
+                lastError = "Abilita Registrazione schermo per WindowUP! e riprova."
+            } else {
+                lastError = "ScreenCaptureKit: \(error.localizedDescription)"
+            }
+            return nil
+        }
+    }
+
+    private func ensurePermissions() {
+        // Accessibilità: prompt una tantum (serve per click-to-activate + hide-while-focused).
+        if !AXIsProcessTrusted() {
+            let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+            AXIsProcessTrustedWithOptions([key: true] as CFDictionary)
+        }
+        // Registrazione schermo: il Task di resolveSCWindow mostra il prompt di sistema.
+        needsScreenRecording = !CGPreflightScreenCaptureAccess()
     }
 
     func close(id: UUID) {
-        panels[id]?.close()
-        panels.removeValue(forKey: id)
         mirrors.removeAll { $0.id == id }
+        statuses.removeValue(forKey: id)
+        if let p = panels.removeValue(forKey: id) {
+            p.onClosed = nil
+            p.onStatus = nil
+            p.stop()
+        }
+        objectWillChange.send()
     }
 
     func closeAll() {
-        for id in panels.keys { panels[id]?.close() }
+        let all = Array(panels.values)
         panels.removeAll()
         mirrors.removeAll()
+        statuses.removeAll()
+        pending.removeAll()
+        for p in all {
+            p.onClosed = nil
+            p.onStatus = nil
+            p.stop()
+        }
+        objectWillChange.send()
     }
 
     func focus(id: UUID) {
-        panels[id]?.orderFrontRegardless()
-        panels[id]?.makeKeyAndOrderFront(nil)
+        panels[id]?.reveal()
     }
 
     func goToRealWindow(_ mirror: MirrorPin) {
-        // Trova il PID corrente della finestra e attiva l'app reale
+        // Metodo Floaty: attiva la finestra vera (il mirror è già passthrough,
+        // quindi il click sull'immagine arriva alla finestra sotto).
+        if let p = panels[mirror.id] {
+            p.activateRealWindow()
+            return
+        }
         let list = pinning.listWindows()
         if let w = list.first(where: { $0.windowNumber == mirror.windowNumber }) {
             pinning.activate(pid: w.ownerPID)
@@ -92,39 +156,42 @@ final class MirrorManager: ObservableObject {
     func update(_ mirror: MirrorPin) {
         guard let idx = mirrors.firstIndex(where: { $0.id == mirror.id }) else { return }
         mirrors[idx] = mirror
-        if let panel = panels[mirror.id] {
-            var geom = PinnedItem(title: "👁 " + mirror.titleSnapshot, urlString: "",
-                                  width: mirror.width, height: mirror.height,
-                                  opacity: mirror.opacity, levelBoosted: mirror.levelBoosted)
-            geom.joinAllSpaces = true
-            panel.apply(geom)
-            panel.ignoresMouseEvents = mirror.clickThrough
-        }
+        panels[mirror.id]?.apply(opacity: mirror.opacity, boosted: mirror.levelBoosted,
+                                 clickThrough: mirror.clickThrough)
     }
 
-    private func showPanel(for mirror: MirrorPin) {
-        if let existing = panels[mirror.id] {
-            existing.orderFrontRegardless()
-            existing.makeKeyAndOrderFront(nil)
+    func statusText(for id: UUID) -> String {
+        statuses[id] ?? "LIVE"
+    }
+
+    private func showFloatyPanel(for mirror: MirrorPin, scWindow: SCWindow) {
+        if panels[mirror.id] != nil {
+            panels[mirror.id]?.reveal()
             return
         }
-        var geom = PinnedItem(title: "👁 " + mirror.titleSnapshot, urlString: "",
-                              width: mirror.width, height: mirror.height,
-                              opacity: mirror.opacity, levelBoosted: mirror.levelBoosted)
-        geom.joinAllSpaces = true
-        let content = MirrorPanelView(manager: self, mirrorID: mirror.id)
-        let hosting = NSHostingView(rootView: content.environmentObject(self))
-        hosting.frame = NSRect(x: 0, y: 0, width: CGFloat(mirror.width), height: CGFloat(mirror.height))
-        let panel = FloatingPanel(item: geom, contentView: hosting)
-        panel.ignoresMouseEvents = mirror.clickThrough
-        NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: panel, queue: .main) { [weak self] _ in
-            self?.panels[mirror.id] = nil
-            self?.mirrors.removeAll { $0.id == mirror.id }
-            self?.objectWillChange.send()
+        let fp = FloatyPanel(scWindow: scWindow, mirrorID: mirror.id,
+                             title: mirror.titleSnapshot,
+                             boosted: mirror.levelBoosted, opacity: mirror.opacity,
+                             clickThrough: mirror.clickThrough)
+        fp.onStatus = { [weak self] text, needsPerm in
+            DispatchQueue.main.async {
+                self?.statuses[mirror.id] = text
+                if needsPerm { self?.needsScreenRecording = true }
+            }
         }
-        panels[mirror.id] = panel
-        panel.orderFrontRegardless()
-        panel.makeKeyAndOrderFront(nil)
+        fp.onClosed = { [weak self] in
+            DispatchQueue.main.async {
+                // Auto-unpin: la finestra vera è stata chiusa altrove.
+                self?.panels.removeValue(forKey: mirror.id)
+                self?.mirrors.removeAll { $0.id == mirror.id }
+                self?.statuses.removeValue(forKey: mirror.id)
+                self?.objectWillChange.send()
+            }
+        }
+        panels[mirror.id] = fp
+        Task { @MainActor in
+            await fp.start()
+        }
     }
 }
 

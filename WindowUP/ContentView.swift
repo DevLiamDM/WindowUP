@@ -113,7 +113,7 @@ struct WebPinsView: View {
     }
 
     private var activeApps: some View {
-        GroupBox("App attive — clicca per lo sticker live sopra") {
+        GroupBox("App attive — clicca per fissarle sopra (Floaty)") {
             VStack(alignment: .leading, spacing: 8) {
                 if runningApps.isEmpty {
                     Text("Nessuna altra app aperta al momento.")
@@ -128,7 +128,7 @@ struct WebPinsView: View {
                                     appIcon(for: app)
                                         .frame(width: 32, height: 32)
                                     Text(app.name).font(.headline).lineLimit(1)
-                                    Text(yabai.isInstalled ? "Fissa davvero sopra" : "Sticker live sopra")
+                                    Text("Fissa sopra")
                                         .font(.caption2).foregroundStyle(.secondary)
                                 }
                                 .frame(maxWidth: .infinity, minHeight: 74)
@@ -136,9 +136,7 @@ struct WebPinsView: View {
                             .buttonStyle(.bordered)
                         }
                     }
-                    Text(yabai.isInstalled
-                         ? "Un click: porta davanti + Fissa davvero (pin reale via yabai, resta finché non sblocchi). Secondo click: sblocca."
-                         : "Un click: porta davanti + sticker live (yabai non installato: vedi tab App e Finestre per il pin vero).")
+                    Text("Un click: mirror live 60fps sempre sopra. Clicca il mirror per usare la finestra vera (senza Recovery/SIP).")
                         .font(.caption2).foregroundStyle(.secondary)
                 }
             }.padding(4)
@@ -160,11 +158,8 @@ struct WebPinsView: View {
     }
 
     private func stickOrPinWindow(_ w: AppWindowInfo) {
-        if yabai.isInstalled {
-            yabai.toggle(w)
-        } else {
-            MirrorManager.shared.createMirror(for: w)
-        }
+        // Metodo Floaty di default: niente Recovery/SIP.
+        MirrorManager.shared.createMirror(for: w)
     }
 
     private func stickApp(_ app: RunningApp) {
@@ -231,6 +226,9 @@ struct WebPinsView: View {
                 Spacer()
                 Button(manager.isVisible(id: item.id) ? "Nascondi" : "Mostra") { manager.toggle(id: item.id) }
                 Button("In primo piano") { manager.bringToFront(id: item.id) }
+                    .help("Riporta sopra senza rubare il focus al gioco/app sotto")
+                Button("Scrivi") { manager.focusForTyping(id: item.id) }
+                    .help("Porta sopra e attiva la tastiera dentro il pannello")
                 Button("Chiudi", role: .destructive) { manager.close(id: item.id) }
             }.buttonStyle(.link).font(.caption)
 
@@ -254,9 +252,11 @@ struct WebPinsView: View {
                 Toggle("Extra-sopra (fullscreen)", isOn: Binding(
                     get: { item.levelBoosted },
                     set: { v in var u = item; u.levelBoosted = v; manager.update(u) })).font(.caption)
+                    .help("Di default resta già sopra Chrome, Desktop e Spaces. Attivalo per i giochi fullscreen.")
                 Toggle("Tutti gli Spaces", isOn: Binding(
                     get: { item.joinAllSpaces },
                     set: { v in var u = item; u.joinAllSpaces = v; manager.update(u) })).font(.caption)
+                    .help("Sempre attivo: gli overlay seguono ogni Space e desktop.")
                 Spacer()
                 ForEach(PinSize.allCases) { s in
                     Button(s.rawValue) {
@@ -296,7 +296,7 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("Comportamento") {
-                Text("Le finestre flottanti restano sempre in primo piano, anche sopra Chrome/Safari, e seguono gli Spaces se attivato.")
+                Text("Gli overlay restano sopra Chrome, Desktop, Spaces e giochi fullscreen. Non rubano il focus: i click fuori non li nascondono, i click dentro non attivano le finestre sotto. Premi Scrivi solo quando vuoi digitare dentro.")
                 HStack {
                     Button("Mostra tutte") { manager.showAll() }
                     Button("Nascondi tutte") { manager.hideAll() }

@@ -163,10 +163,14 @@ struct FloatingPanelContentView: View {
                 get: { item.levelBoosted },
                 set: { v in var u = item; u.levelBoosted = v; manager.update(u) }
             )).font(.caption)
+                .help("Il pannello resta già sopra Desktop e Spaces. Attivalo per i giochi fullscreen.")
             Toggle("Visibile in tutti gli Spaces", isOn: Binding(
                 get: { item.joinAllSpaces },
                 set: { v in var u = item; u.joinAllSpaces = v; manager.update(u) }
             )).font(.caption)
+                .help("Sempre attivo per gli overlay.")
+            Text("Non ruba il focus: gioca o naviga sotto, il pannello resta sopra. Clicca dentro solo per scrivere.")
+                .font(.caption2).foregroundStyle(.secondary)
             HStack {
                 ForEach(PinSize.allCases) { s in
                     Button(s.rawValue) {

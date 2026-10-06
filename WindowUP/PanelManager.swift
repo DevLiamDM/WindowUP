@@ -65,18 +65,30 @@ final class PanelManager: ObservableObject {
             if let item = items.first(where: { $0.id == id }) { showPanel(for: item) }
             return
         }
-        if panel.isVisible { panel.orderOut(nil) } else { bringToFront(id: id) }
+        if panel.isVisible { panel.hideByUser() } else { bringToFront(id: id) }
     }
 
     func bringToFront(id: UUID) {
         guard let item = items.first(where: { $0.id == id }) else { return }
         if let panel = panels[id] {
             panel.apply(item)
-            panel.orderFrontRegardless()
-            panel.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            // Passivo: resta sopra senza rubare focus al gioco/app sotto.
+            // Per scrivere dentro: click nel campo (nonactivating -> diventa
+            // key solo lì) oppure usa focusForTyping() dal bottone "Scrivi".
+            panel.orderFrontPassive()
         } else {
             showPanel(for: item)
+        }
+    }
+
+    /// Azione esplicita "voglio scriverci": porta davanti + rende key.
+    func focusForTyping(id: UUID) {
+        guard let item = items.first(where: { $0.id == id }) else { return }
+        if let panel = panels[id] {
+            panel.apply(item)
+            panel.focusForTyping()
+        } else {
+            showPanel(for: item, takeKey: true)
         }
     }
 
@@ -85,16 +97,15 @@ final class PanelManager: ObservableObject {
     }
 
     func hideAll() {
-        for panel in panels.values { panel.orderOut(nil) }
+        for panel in panels.values { panel.hideByUser() }
     }
 
     // MARK: - Pannelli
 
-    private func showPanel(for item: PinnedItem) {
+    private func showPanel(for item: PinnedItem, takeKey: Bool = false) {
         if let existing = panels[item.id] {
             existing.apply(item)
-            existing.orderFrontRegardless()
-            existing.makeKeyAndOrderFront(nil)
+            if takeKey { existing.focusForTyping() } else { existing.orderFrontPassive() }
             return
         }
         let content = FloatingPanelContentView(manager: self, itemID: item.id)
@@ -110,8 +121,7 @@ final class PanelManager: ObservableObject {
             self?.objectWillChange.send()
         }
         panels[item.id] = panel
-        panel.orderFrontRegardless()
-        panel.makeKeyAndOrderFront(nil)
+        if takeKey { panel.focusForTyping() } else { panel.orderFrontPassive() }
     }
 
     private func binding(for id: UUID) -> PinnedItem? {

@@ -188,6 +188,9 @@ final class TerminalView: NSView {
     override var isOpaque: Bool { true }
 
     override func mouseDown(with e: NSEvent) {
+        // Pannello nonactivating: diventa key (senza attivare l'app
+        // e senza minimizzare il gioco) così si può scrivere.
+        window?.makeKeyAndOrderFront(nil)
         window?.makeFirstResponder(self)
     }
 
@@ -312,8 +315,7 @@ final class TerminalManager: ObservableObject {
             self?.objectWillChange.send()
         }
         panels[session.id] = panel
-        panel.orderFrontRegardless()
-        panel.makeKeyAndOrderFront(nil)
+        panel.orderFrontPassive()
     }
 
     func close(_ session: TerminalSession) {
@@ -327,8 +329,7 @@ final class TerminalManager: ObservableObject {
     }
 
     func focus(_ session: TerminalSession) {
-        panels[session.id]?.orderFrontRegardless()
-        panels[session.id]?.makeKeyAndOrderFront(nil)
+        panels[session.id]?.orderFrontPassive()
     }
 }
 

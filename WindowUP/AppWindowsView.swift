@@ -120,11 +120,11 @@ struct AppWindowsView: View {
     }
 
     private var honestBanner: some View {
-        GroupBox("App native: come funziona") {
+        GroupBox("App native: come funziona (metodo Floaty, senza Recovery)") {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Verificato su questo Mac: macOS ignora qualsiasi tentativo di tenere sopra la finestra di un'altra app (CGS cross-process no-op, raise AX accettato ma inefficace). Per questo WindowUP! usa la stessa tecnica di Floaty: **sticker live** (ScreenCaptureKit ~15fps) in pannelli propri + click per tornare alla finestra vera.")
+                Text("macOS non lascia spostare la finestra di un'altra app sopra le altre. WindowUP usa il metodo Floaty: mirror live 60fps sopra tutto + click passthrough alla finestra vera.")
                     .font(.callout)
-                Text("Strade che funzionano: **Terminale integrato** qui sotto (finestra nostra: sopra garantito e interattivo), **anteprime live** (solo vista) + Vai alla finestra, oppure **yabai+SIP** per il pin vero di qualsiasi app (vedi guida sotto). I siti web nel tab accanto restano interattivi.")
+                Text("Clicchi il mirror e usi la finestra vera: il click arriva a lei, poi scrivi, trascini la barra per spostarla e navighi normalmente. Quando clicchi altrove, il mirror ricompare sopra. Richiede solo Registrazione schermo + Accessibilità. Niente SIP, niente Recovery.")
                     .font(.caption).foregroundStyle(.secondary)
             }.padding(4)
         }
@@ -152,9 +152,9 @@ struct AppWindowsView: View {
                     .font(.caption2).foregroundStyle(.secondary)
                 ForEach([
                     "1. Avvia la videochiamata nell'app WhatsApp nativa (camera e microfono funzionano lì).",
-                    "2. Qui sotto, sulla finestra della chiamata, premi “Overlay gioco”.",
-                    "3. L'overlay parte già in Extra-sopra: resta visibile anche sopra i giochi fullscreen. Attiva “Click-through” se copre il mirino.",
-                    "4. Audio e microfono passano dall'app nativa; per chiudere/riattivare usa “Vai alla finestra”."
+                    "2. Qui sotto, sulla finestra della chiamata, premi “Fissa sopra”.",
+                    "3. Il mirror resta sopra il gioco: cliccalo e si apre la chiamata vera (a lag zero); quando torni al gioco, il mirror ricompare.",
+                    "4. Audio e microfono passano dall'app nativa; per chiudere usa “Sblocca”."
                 ], id: \.self) { step in
                     Text(step).font(.caption).foregroundStyle(.secondary)
                 }
@@ -308,26 +308,44 @@ struct AppWindowsView: View {
     }
 
     private var activeMirrors: some View {
-        GroupBox("Anteprime live attive (\(mirrors.mirrors.count))") {
+        GroupBox("Finestre fissate sopra (\(mirrors.mirrors.count))") {
             VStack(spacing: 6) {
                 if mirrors.mirrors.isEmpty {
-                    Text("Nessuna anteprima. Fissa Terminale o VS Code dalla lista per tenerli d'occhio mentre navighi.")
+                    Text("Nessuna finestra fissata. Premi “Fissa sopra” su una finestra qui sotto: resta visibile mentre usi altre app, cliccala per usarla vera.")
                         .font(.callout).foregroundStyle(.secondary).padding(4)
                 } else {
                     ForEach(mirrors.mirrors) { m in
-                        HStack {
-                            Text("👁 \(m.titleSnapshot)").font(.headline).lineLimit(1)
-                            Spacer()
-                            Button("Mostra") { mirrors.focus(id: m.id) }.buttonStyle(.link)
-                            Button("Vai alla finestra") { mirrors.goToRealWindow(m) }.buttonStyle(.link)
-                            Button("Chiudi", role: .destructive) { mirrors.close(id: m.id) }.buttonStyle(.link)
-                        }.font(.caption)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text("📌 \(m.titleSnapshot)").font(.headline).lineLimit(1)
+                                    Text(mirrors.statusText(for: m.id)).font(.caption2).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Button("Mostra") { mirrors.focus(id: m.id) }.buttonStyle(.link)
+                                Button("Usa vera") { mirrors.goToRealWindow(m) }.buttonStyle(.link)
+                                Button("Sblocca", role: .destructive) { mirrors.close(id: m.id) }.buttonStyle(.link)
+                            }.font(.caption)
+                            Toggle(m.clickThrough ? "Solo vista (click passanti, per giochi)" : "Interattivo (click/scrittura sul mirror)",
+                                   isOn: Binding(
+                                    get: { m.clickThrough },
+                                    set: { v in var u = m; u.clickThrough = v; mirrors.update(u) }
+                                   )).font(.caption2)
+                                .help("Interattivo: clicchi il mirror e usi la finestra vera (scrivere, trascinare, navigare). Solo vista: i click passano oltre, mai focus (per overlay sui giochi).")
+                        }
                         Divider()
                     }
                     HStack {
-                        Button("Chiudi tutte", role: .destructive) { mirrors.closeAll() }.font(.caption)
+                        Button("Sblocca tutte", role: .destructive) { mirrors.closeAll() }.font(.caption)
                         Spacer()
                     }
+                }
+                if mirrors.needsScreenRecording {
+                    Text("Abilita Registrazione schermo per WindowUP! in Impostazioni di Sistema, poi riprova.")
+                        .font(.caption).foregroundStyle(.orange)
+                }
+                if let err = mirrors.lastError {
+                    Text(err).font(.caption).foregroundStyle(.red).lineLimit(2)
                 }
             }.padding(4)
         }
@@ -361,13 +379,19 @@ struct AppWindowsView: View {
             }
             Spacer()
             VStack(spacing: 4) {
-                if isMirrored(w) {
-                    Button("In anteprima ✓") { manager.preview(w) }.buttonStyle(.bordered)
-                } else {
-                    Button("Anteprima live") { manager.preview(w) }.buttonStyle(.borderedProminent)
+                if w.bundleID == "com.apple.Terminal" {
+                    Button("Terminale sempre sopra") { terminals.openTerminal() }.buttonStyle(.borderedProminent)
+                        .help("Apre il terminale integrato di WindowUP (vera shell zsh): resta sopra a tutto ed è interattivo, come il mini player dei siti")
                 }
-                Button("Overlay gioco") { manager.previewBoosted(w) }.buttonStyle(.borderedProminent)
-                    .help("Riquadro live già in Extra-sopra: resta visibile anche sopra i giochi fullscreen")
+                if isMirrored(w) {
+                    Button("Fissata ✓") { if let m = mirrors.mirrors.first(where: { $0.windowNumber == w.windowNumber }) { mirrors.close(id: m.id) } }.buttonStyle(.bordered)
+                        .help("Premi per sbloccare")
+                } else {
+                    Button("Fissa sopra") { manager.preview(w) }.buttonStyle(.borderedProminent)
+                        .help("Mirror live 60fps sempre sopra (metodo Floaty). Cliccalo per usare la finestra vera, senza Recovery/SIP.")
+                }
+                Button("Fissa + Extra") { manager.previewBoosted(w) }.buttonStyle(.bordered)
+                    .help("Come sopra ma già in Extra-sopra (tenta anche sopra i giochi fullscreen)")
                 if yabai.isInstalled {
                     let yid = yabai.match(w).map(\.id)
                     if let yid = yid, yabai.isPinned(yabaiID: yid) {
