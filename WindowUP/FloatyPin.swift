@@ -119,6 +119,31 @@ final class FloatyCapture: NSObject, SCStreamDelegate, SCStreamOutput {
     }
 }
 
+// MARK: - Calma Gestore: non deve mai coprire il lavoro altrui da solo
+
+/// Quando un click su sticker/pannello attiva la nostra app, AppKit porta
+/// davanti ANCHE il Gestore. Appena il focus passa all'app vera, lo rimandiamo
+/// indietro con orderBack (resta aperto e raggiungibile, niente chiusure).
+/// Tocca solo finestre a livello normale: i pannelli always-on-top mai.
+/// Chiamare solo dal main thread.
+enum UPFrontCalm {
+    static func pushBackIfSurfacing() {
+        let me = ProcessInfo.processInfo.processIdentifier
+        guard let front = NSWorkspace.shared.frontmostApplication,
+              front.processIdentifier != me else { return }
+        guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as NSArray? as? [[String: Any]] else { return }
+        for d in list {
+            guard let layer = d[kCGWindowLayer as String] as? Int, layer == 0,
+                  let pid = d[kCGWindowOwnerPID as String] as? Int32, pid == me,
+                  let num = d[kCGWindowNumber as String] as? Int,
+                  let w = NSApp.windows.first(where: { $0.windowNumber == num }),
+                  w.level.rawValue == NSWindow.Level.normal.rawValue,
+                  w.isVisible, !w.isMiniaturized else { continue }
+            w.orderBack(nil)
+        }
+    }
+}
+
 // MARK: - Coordinate server (origine alto-sx) -> Cocoa
 
 func floatyCgToNS(_ cgRect: CGRect) -> NSRect {
@@ -152,6 +177,18 @@ func floatyAXWindowID(_ el: AXUIElement) -> CGWindowID? {
 /// trascinare e navigare funzionano con un solo click.
 final class FloatyClickView: NSView {
     var onMouse: ((NSEvent) -> Void)?
+    var onHover: ((Bool) -> Void)?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        for t in trackingAreas { removeTrackingArea(t) }
+        addTrackingArea(NSTrackingArea(rect: bounds,
+                                       options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+                                       owner: self, userInfo: nil))
+    }
+
+    override func mouseEntered(with event: NSEvent) { onHover?(true) }
+    override func mouseExited(with event: NSEvent) { onHover?(false) }
 
     override func mouseDown(with e: NSEvent) { onMouse?(e) }
     override func rightMouseDown(with e: NSEvent) { onMouse?(e) }
@@ -169,6 +206,9 @@ final class FloatyPanel {
     var panel: NSWindow!
     var onClosed: (() -> Void)?
     var onStatus: ((String, Bool) -> Void)? // (stato, needsPermission)
+    /// Richiesto dalla ✕ sullo sticker (hover, solo interattivo).
+    var onCloseRequest: (() -> Void)?
+    private var closeButton: NSButton?
 
     private var axApp: AXUIElement?
     private var axObserver: AXObserver?
@@ -226,11 +266,39 @@ final class FloatyPanel {
         vl.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
         view.layer?.addSublayer(vl)
         view.onMouse = { [weak self] e in self?.handleMirrorClick(e) }
+        view.onHover = { [weak self] h in self?.setCloseButtonVisible(h) }
         p.contentView = view
         if !title.isEmpty { p.title = title }
 
+        // ✕ di sblocco: appare in hover (solo interattivo; in passthrough il
+        // pannello non riceve il mouse). Nascosta di default.
+        let x = NSButton(title: "✕", target: nil, action: nil)
+        x.bezelStyle = .circular
+        x.controlSize = .mini
+        x.font = NSFont.systemFont(ofSize: 11, weight: .semibold)
+        x.frame = NSRect(x: nsFrame.width - 32, y: nsFrame.height - 26, width: 24, height: 20)
+        x.autoresizingMask = [.minXMargin, .minYMargin]
+        x.alphaValue = 0
+        x.target = self
+        x.action = #selector(closeButtonPressed)
+        x.toolTip = "Sblocca (togli il sempre-sopra)"
+        view.addSubview(x)
+        self.closeButton = x
+
         capture.onError = { [weak self] in
             self?.handleCaptureError()
+        }
+    }
+
+    @objc private func closeButtonPressed() {
+        onCloseRequest?()
+    }
+
+    private func setCloseButtonVisible(_ visible: Bool) {
+        guard !clickThrough, !stopped else { return }
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.15
+            closeButton?.animator().alphaValue = visible ? 1 : 0
         }
     }
 
@@ -281,6 +349,8 @@ final class FloatyPanel {
         panel.alphaValue = CGFloat(max(0.3, min(1.0, opacity)))
         panel.level = boosted ? .screenSaver : .floating
         panel.ignoresMouseEvents = clickThrough
+        // In passthrough niente hover/click: nascondi subito la ✕.
+        if clickThrough { closeButton?.alphaValue = 0 }
         if clickThrough {
             if clickMonitor == nil { startClickMonitor() }
         } else {
@@ -451,6 +521,7 @@ final class FloatyPanel {
     }
 
     private func updateFocusState() {
+        UPFrontCalm.pushBackIfSurfacing()
         let focused = isRealWindowFocused()
         if focused != realWindowFocused {
             realWindowFocused = focused
@@ -532,6 +603,8 @@ final class FloatyPanel {
                 await self.restoreMirrorAfterFailedClick()
                 return
             }
+            // La vera è davanti: il Gestore emerso col nostro click torna indietro subito.
+            await MainActor.run { UPFrontCalm.pushBackIfSurfacing() }
             let realWID = CGWindowID(self.scWindow.windowID)
             for i in 0..<40 {
                 // AX va toccata sul main thread: da background, su finestre
@@ -626,6 +699,7 @@ final class FloatyPanel {
     /// Non nascondere mai per deactivate/click-fuori: l'unico hide lecito è
     /// "la finestra vera è in focus" (gestito da updateFocusState).
     private func reassertTopMost() {
+        UPFrontCalm.pushBackIfSurfacing()
         guard !stopped, !realWindowFocused else { return }
         let want: NSWindow.Level = boosted ? .screenSaver : .floating
         if panel.level != want { panel.level = want }

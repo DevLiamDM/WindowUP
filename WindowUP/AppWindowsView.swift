@@ -141,7 +141,7 @@ struct AppWindowsView: View {
                     Button("Aggiorna lista") { manager.refresh() }.font(.caption).buttonStyle(UPGhostButtonStyle())
                 }
                 HStack(spacing: 8) {
-                    Text("Tasto globale ⌃⌥⌘M: salta tra gioco e chiamata").font(.caption).foregroundStyle(UPTheme.textPrimary)
+                    Text("Tasti globali: ⌃⌥⌘M salta tra gioco e chiamata • ⌃⌥⌘U toglie il lock all'ultimo mirror").font(.caption).foregroundStyle(UPTheme.textPrimary).foregroundStyle(UPTheme.textPrimary)
                     Spacer()
                     if hotkey.accessibilityOK {
                         Text(hotkey.monitorInstalled ? "attivo ✓" : "in attesa…").font(.caption).foregroundStyle(.green)

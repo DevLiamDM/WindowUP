@@ -172,7 +172,9 @@ final class FloatingPanel: NSWindow {
     /// Passivo: niente focus, niente geometria, salta minimizzati e
     /// nascosti-dall'utente. Se il SISTEMA lo ha nascosto/abbassato (cambio
     /// Space, fullscreen, Mostra Desktop), lo riporta sempre su.
+    /// In più rimanda indietro il Gestore emerso da solo (mai sopra il lavoro).
     private func reassertTopMost() {
+        UPFrontCalm.pushBackIfSurfacing()
         guard !userHidden, !isMiniaturized else { return }
         if level != expectedLevel { level = expectedLevel }
         if collectionBehavior != [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle] {

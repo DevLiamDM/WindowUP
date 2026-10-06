@@ -109,11 +109,16 @@ final class MirrorManager: ObservableObject {
     }
 
     func close(id: UUID) {
+        // Libera anche il resolve in volo (stesso wid): così un re-pin
+        // immediato parte davvero; il Task vecchio non crea ghost
+        // (showFloatyPanel controlla che il mirror sia ancora voluto).
+        if let m = mirrors.first(where: { $0.id == id }) { pending.remove(m.windowNumber) }
         mirrors.removeAll { $0.id == id }
         statuses.removeValue(forKey: id)
         if let p = panels.removeValue(forKey: id) {
             p.onClosed = nil
             p.onStatus = nil
+            p.onCloseRequest = nil
             p.stop()
         }
         objectWillChange.send()
@@ -128,6 +133,7 @@ final class MirrorManager: ObservableObject {
         for p in all {
             p.onClosed = nil
             p.onStatus = nil
+            p.onCloseRequest = nil
             p.stop()
         }
         objectWillChange.send()
@@ -165,14 +171,18 @@ final class MirrorManager: ObservableObject {
     }
 
     private func showFloatyPanel(for mirror: MirrorPin, scWindow: SCWindow) {
+        // L'utente può aver sbloccato mentre risolvevamo SCWindow: niente ghost.
+        guard mirrors.contains(where: { $0.id == mirror.id }) else { return }
         if panels[mirror.id] != nil {
             panels[mirror.id]?.reveal()
             return
         }
+        // Rileggi il modello: clickThrough può essere cambiato nel frattempo.
+        let current = mirrors.first(where: { $0.id == mirror.id }) ?? mirror
         let fp = FloatyPanel(scWindow: scWindow, mirrorID: mirror.id,
-                             title: mirror.titleSnapshot,
-                             boosted: mirror.levelBoosted, opacity: mirror.opacity,
-                             clickThrough: mirror.clickThrough)
+                             title: current.titleSnapshot,
+                             boosted: current.levelBoosted, opacity: current.opacity,
+                             clickThrough: current.clickThrough)
         fp.onStatus = { [weak self] text, needsPerm in
             DispatchQueue.main.async {
                 self?.statuses[mirror.id] = text
@@ -187,6 +197,10 @@ final class MirrorManager: ObservableObject {
                 self?.statuses.removeValue(forKey: mirror.id)
                 self?.objectWillChange.send()
             }
+        }
+        fp.onCloseRequest = { [weak self] in
+            // La ✕ sullo sticker (hover): sblocco immediato.
+            self?.close(id: mirror.id)
         }
         panels[mirror.id] = fp
         Task { @MainActor in
@@ -235,8 +249,16 @@ final class HotkeyManager: ObservableObject {
     private func handle(_ e: NSEvent) {
         let f = e.modifierFlags.intersection(.deviceIndependentFlagsMask)
         guard f == [.control, .option, .command],
-              e.charactersIgnoringModifiers?.lowercased() == "m" else { return }
-        jump()
+              let key = e.charactersIgnoringModifiers?.lowercased() else { return }
+        if key == "m" { jump() }
+        // ⌃⌥⌘U = togli il lock all'ultimo mirror (sblocco da tastiera).
+        else if key == "u" { unpinLast() }
+    }
+
+    /// Sblocca l'ultimo mirror creato (se esiste).
+    func unpinLast() {
+        guard let m = MirrorManager.shared.mirrors.last else { return }
+        MirrorManager.shared.close(id: m.id)
     }
 
     /// App proprietaria dell'ultimo overlay creato (risolta al momento del salto).
