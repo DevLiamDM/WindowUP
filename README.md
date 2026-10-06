@@ -1,100 +1,158 @@
-# WindowUP! — finestre sempre in primo piano (macOS, M2 Max)
+# WindowUP! — Always-on-Top Windows for macOS (M2 Max)
 
-App nativa macOS (arm64) che ti permette di **fissare sopra** delle schede web:
-mentre navighi su Chrome/Safari ti tieni aperta **WhatsApp come quadratino piccolo,
-spostabile e ridimensionabile**, e così via per Gmail, Calendar, YouTube, ChatGPT…
+A native macOS (arm64) app that lets you **pin web tabs above other windows**:
 
-L'app è **già compilata e in esecuzione**: `WindowUP.app` in questa cartella.
+while browsing in Chrome/Safari, you can keep **WhatsApp as a small, movable, resizable square** on screen — and do the same with Gmail, Calendar, YouTube, ChatGPT, and more.
 
-## Uso (30 secondi)
+The app is **already compiled and running**: `WindowUP.app` is located in this folder.
 
-1. L'app si apre con la finestra **Gestore** + un esempio **WhatsApp 400×400** già pinnato.
-2. Fai login su WhatsApp Web col QR **una sola volta**: resta memorizzato (WKWebView persistente).
-3. Trascina il pannello **dalla barra del titolo** per spostarlo, trascina **gli angoli** per ridimensionarlo.
-4. Nel Gestore (tab **Siti Web**):
-   - **Preset rapidi**: WhatsApp, Telegram, Gmail, Calendar, YouTube, ChatGPT, Spotify, Google.
-   - **App attive**: un box con le app aperte sul Mac (OpenCode, Sublime Text, Packet Tracer…) — un click la porta davanti e il watchdog "tieni davanti" la riporta sopra ogni secondo (sperimentale, richiede Accessibilità).
-   - **Nuova finestra pinnata**: incolla un URL qualsiasi + scegli la misura (Quadrato/Piccolo/Medio/Grande).
-   - Per ogni finestra: Mostra/Nascondi, opacità, larghezza/altezza, `Extra-sopra`, `Tutti gli Spaces`.
-5. Menu comandi: `⌘N` nuova finestra, `⇧⌘M` mostra tutte, `⇧⌘H` nascondi tutte.
+## Usage (30 seconds)
 
-### Dettagli utili
+1. The app opens with the **Manager** window + a sample **400×400 WhatsApp** window already pinned.
+2. Log in to WhatsApp Web using the QR code **once**: your session remains stored using a persistent WKWebView.
+3. Drag the panel **from the title bar** to move it, and drag **the corners** to resize it.
+4. In the Manager (**Websites** tab):
 
-- **Sempre sopra**: livello `.floating` di default; attiva `Extra-sopra (fullscreen)` per livello `.screenSaver` (sta sopra anche alle app a tutto schermo).
-- **Spaces**: `Visibile in tutti gli Spaces` = segue il desktop; disattivalo per legarla a uno Space.
-- **Toolbar di ogni pannello**: indietro/avanti/reload, barra indirizzi, ⚙️ con opacità + misure rapide.
-- **Persistenza**: le finestre vengono salvate e riaperte al riavvio.
-- **Login**: cookie/localStorage persistiti in `WKWebsiteDataStore.default`, quindi Gmail/WhatsApp restano loggati.
+   * **Quick Presets**: WhatsApp, Telegram, Gmail, Calendar, YouTube, ChatGPT, Spotify, Google.
+   * **Active Apps**: a box showing apps currently open on your Mac (OpenCode, Sublime Text, Packet Tracer, etc.). Click an app to bring it to the front; the "keep in front" watchdog brings it back above other windows every second (experimental, requires Accessibility permissions).
+   * **New Pinned Window**: paste any URL + choose a size (Square/Small/Medium/Large).
+   * For each window: Show/Hide, opacity, width/height, `Extra Above`, `All Spaces`.
+5. Command menu:
 
-## App native: Terminale, VS Code, ecc. (tab "App e Finestre")
+   * `⌘N` — New Window
+   * `⇧⌘M` — Show All
+   * `⇧⌘H` — Hide All
 
-Oltre ai siti web, WindowUP! gestisce le **finestre delle app reali** con la stessa tecnica di Floaty:
+### Useful Details
 
-- **App attive** (tab Siti Web): un box con le app aperte sul Mac — un click porta l'app davanti e crea uno **sticker live sempre-sopra** (~15fps via ScreenCaptureKit). Click sullo sticker = torni alla finestra vera.
-- **Sticker live**: pannelli flottanti con il flusso video della finestra (funziona anche se coperta), opacità, click-through, Extra-sopra. Dal pannello: **Vai alla finestra** per interagire con l'originale.
-- **Apri app**: pulsanti rapidi per Terminale, VS Code, Note, Monitoraggio Attività + "Scegli app…" + "Attiva".
+* **Always on top**: uses the `.floating` window level by default; enable `Extra Above (Fullscreen)` to use `.screenSaver` level (stays above even fullscreen apps).
+* **Spaces**: `Visible in All Spaces` makes the window follow you across desktops. Disable it to attach the window to a specific Space.
+* **Panel Toolbar**: every panel includes back/forward/reload controls, an address bar, and ⚙️ settings with opacity + quick size options.
+* **Persistence**: windows are saved and automatically reopened after restarting the app.
+* **Login sessions**: cookies/localStorage are persisted through `WKWebsiteDataStore.default`, so services such as Gmail and WhatsApp remain logged in.
 
-> Limite onesto: macOS 15/26 **blocca** il vero always-on-top interattivo cross-process (verificato: `CGSSetWindowLevel` su finestre altrui è no-op). L'anteprima live nel proprio pannello è l'approccio stabile senza SIP. Per interagire si usa il pulsante "Vai alla finestra".
+---
 
-**Permessi necessari** (l'app li indica da sola nel tab):
-- **Registrazione schermo** (Privacy e Sicurezza): necessaria per titoli e anteprime. Senza, la lista mostra le app ma senza titoli e le anteprime restano vuote.
-- **Accessibilità** (consigliata): per portare le app in primo piano con "Attiva".
+# Native Apps: Terminal, VS Code, etc. (App & Windows tab)
 
-## Verdetto tecnico (testato su questo Mac, non teoria)
+In addition to websites, WindowUP! can manage **real application windows** using the same general approach as Floaty:
 
-- `CGSSetWindowLevel` su finestra altrui: ritorna successo, **pixel identici prima/dopo** (test con screenshot + hash). Non fa nulla.
-- `AXRaise`: accettato, nessun effetto visivo. `CGSOrderWindow`: errore.
-- Floaty e simili usano **mirror ScreenCaptureKit**, non pin vero (lo dicono loro).
-- Pin vero interattivo = solo yabai + SIP allentato (guida nel tab App e Finestre).
+* **Active Apps** (Websites tab): a box showing apps currently open on your Mac. Clicking an app brings it to the front and creates a **live, always-on-top sticker** (~15 FPS using ScreenCaptureKit). Clicking the sticker takes you back to the real window.
+* **Live Sticker**: floating panels showing the live video stream of an application window (works even when the original window is covered), with opacity, click-through, and `Extra Above` controls. From the panel, use **Go to Window** to interact with the original application.
+* **Open App**: quick buttons for Terminal, VS Code, Notes, Activity Monitor + `Choose App…` + `Activate`.
 
-Per sicurezza macOS **non permette** di incorporare in modo interattivo la finestra di *un'altra app nativa*
-(es. l'app WhatsApp dal Mac App Store) dentro la propria finestra, né di forzarla "always on top" con API pubbliche.
+> **Honest limitation:** macOS 15/26 blocks true interactive cross-process always-on-top behavior (verified: `CGSSetWindowLevel` on another application's windows is effectively a no-op). A live ScreenCaptureKit preview inside WindowUP!'s own panel is the stable approach without disabling SIP. To interact with the original application, use the `Go to Window` button.
 
-Per questo WindowUP! usa le **versioni web** (`web.whatsapp.com`, `web.telegram.org`, `mail.google.com`…),
-che sono complete e interattive. È l'approccio corretto e stabile.
-Per le app native (Terminale, VS Code…) c'è il tab **App e Finestre**: **Terminale integrato** (vero, sempre sopra),
-**sticker live** stile Floaty, anteprime + Vai alla finestra — vedi sopra.
+### Required Permissions
 
-## Installazione stabile
+WindowUP! indicates the required permissions directly in the tab:
+
+* **Screen Recording** (Privacy & Security): required for window titles and live previews. Without it, the app list still appears, but window titles are unavailable and previews remain blank.
+* **Accessibility** (recommended): required to bring other applications to the front using `Activate`.
+
+---
+
+# Technical Verdict — Tested on This Mac, Not Just in Theory
+
+* `CGSSetWindowLevel` on another application's window: returns success, but **the pixels remain identical before and after** (verified using screenshots + hashes). It does nothing.
+* `AXRaise`: accepted, but produces no visible effect.
+* `CGSOrderWindow`: returns an error.
+* Floaty and similar applications use **ScreenCaptureKit mirroring**, not true pinning.
+* True interactive pinning is only possible using **yabai + reduced SIP protections** (guide available in the App & Windows tab).
+
+For security reasons, macOS does **not allow another native application's window** to be interactively embedded inside your own window (for example, the WhatsApp app from the Mac App Store), nor can you force another application's native window to remain always on top using public APIs.
+
+For this reason, WindowUP! uses the **web versions** (`web.whatsapp.com`, `web.telegram.org`, `mail.google.com`, etc.), which are fully interactive and complete.
+
+This is the correct and stable approach.
+
+For native applications such as Terminal or VS Code, the **App & Windows** tab provides:
+
+* **Integrated Terminal** — real, interactive, always on top.
+* **Live Stickers** — Floaty-style live previews.
+* **Window previews**.
+* **Go to Window** — instantly return to the real application window.
+
+---
+
+# Stable Installation
 
 ```bash
-# Copia in Applicazioni (consigliato)
+# Copy to Applications (recommended)
 cp -R "WindowUP.app" /Applications/
 open /Applications/WindowUP.app
 ```
 
-Al primo avvio con firma ad-hoc, se macOS blocca: tasto destro su `WindowUP.app` → Apri → Apri.
+On the first launch, if macOS blocks the app because it is ad-hoc signed:
 
-## Ricompilare / modificare
+**Right-click `WindowUP.app` → Open → Open**
 
-Serve Xcode (testato con Xcode 26.2, macOS su M2 Max, target macOS 13+).
+---
+
+# Rebuilding / Modifying the App
+
+Xcode is required.
+
+Tested with **Xcode 26.2**, macOS on an **M2 Max**, with a **macOS 13+ deployment target**.
 
 ```bash
 cd "/Users/liamdimarzio/Documents/programmi/WindowUP!"
+
 # Debug
 xcodebuild -project WindowUP.xcodeproj -scheme WindowUP -configuration Debug build
-# Release + copia fresca
+
+# Release + fresh copy
 xcodebuild -project WindowUP.xcodeproj -scheme WindowUP -configuration Release build
+
 cp -R ~/Library/Developer/Xcode/DerivedData/WindowUP-*/Build/Products/Release/WindowUP.app ./WindowUP.app
 ```
 
-Oppure apri `WindowUP.xcodeproj` in Xcode e premi `⌘R`.
+Alternatively, open `WindowUP.xcodeproj` in Xcode and press `⌘R`.
 
-Struttura codice (`WindowUP/`):
+## Project Structure
 
-- `WindowUPApp.swift` — entrypoint + AppDelegate (ripristino sessione)
-- `ContentView.swift` — Gestore a tab: Siti Web + App e Finestre, Settings
-- `PanelManager.swift` — crea/gestisce/salva gli `NSPanel` web
-- `WindowPinning.swift` — elenco finestre altrui (CGWindowList), apertura/attivazione app, permessi
-- `MirrorManager.swift` — anteprime live view-only delle app native in pannelli flottanti
-- `AppWindowsView.swift` — tab App e Finestre (apri app, anteprime, permessi)
-- `FloatingPanel.swift` — `NSPanel` always-on-top, spostabile/ridimensionabile
-- `FloatingWebView.swift` — `WKWebView` con User-Agent Safari + toolbar
-- `Models.swift` — `PinnedItem`, preset, misure
+The main source files are:
 
-## Troubleshooting
+* `WindowUPApp.swift` — entry point + AppDelegate (session restoration)
+* `ContentView.swift` — tabbed Manager: Websites + App & Windows + Settings
+* `PanelManager.swift` — creates/manages/saves web `NSPanel`s
+* `WindowPinning.swift` — lists other application windows (`CGWindowList`), launches/activates apps, handles permissions
+* `MirrorManager.swift` — live previews of native apps using ScreenCaptureKit
+* `AppWindowsView.swift` — App & Windows tab (launch apps, previews, permissions)
+* `FloatingPanel.swift` — always-on-top, movable/resizable `NSPanel`
+* `FloatingWebView.swift` — `WKWebView` with Safari User-Agent + toolbar
+* `Models.swift` — `PinnedItem`, presets, and size definitions
 
-- **WhatsApp dice "browser non supportato"**: risolto via User-Agent Safari desktop. Se ricapita, ricarica con `⟳` nel pannello.
-- **Non sta sopra un'app a fullscreen**: attiva `Extra-sopra` nelle impostazioni del pannello (⚙️).
-- **Dopo il riavvio chiede di nuovo il QR**: hai cancellato i dati web di sistema o cambiato `WKWebsiteDataStore` — normalmente non succede.
-- **Firma**: build ad-hoc (`CODE_SIGN_IDENTITY = -`, sandbox disattivata, solo `network.client`). Per distribuire: imposta un Team in Xcode.
+---
+
+# Troubleshooting
+
+### WhatsApp says "browser not supported"
+
+This is handled by using a **desktop Safari User-Agent**.
+
+If the problem occurs again, reload the page using the `⟳` button in the panel.
+
+### The window does not stay above a fullscreen app
+
+Enable **`Extra Above`** in the panel settings.
+
+### WhatsApp/Gmail asks for the QR code or login again after restarting
+
+You may have deleted the system web data or changed the `WKWebsiteDataStore`.
+
+Normally, this should **not happen**, because WindowUP! uses:
+
+`WKWebsiteDataStore.default`
+
+for persistent cookies and local storage.
+
+### App signing
+
+The current build uses **ad-hoc signing**:
+
+* `CODE_SIGN_IDENTITY = -`
+* App Sandbox disabled
+* Only `network.client` entitlement enabled
+
+For distribution, configure a proper **Apple Developer Team** in Xcode.
