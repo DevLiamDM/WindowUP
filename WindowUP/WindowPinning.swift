@@ -324,7 +324,11 @@ final class WindowPinning {
     }
 
     func activate(pid: pid_t) {
-        NSRunningApplication(processIdentifier: pid)?.activate(options: [.activateAllWindows])
+        let a = NSRunningApplication(processIdentifier: pid)
+        // Unhide prima: se l'app è nascosta (⌘H) le sue finestre non sono
+        // agganciabili finché non torna visibile.
+        a?.unhide()
+        a?.activate(options: [.activateAllWindows])
     }
 
     func icon(forPID pid: pid_t) -> NSImage? {

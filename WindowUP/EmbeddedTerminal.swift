@@ -361,16 +361,16 @@ struct EmbeddedTerminalPanelView: View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
                 Circle().fill(session.alive ? .green : .red).frame(width: 8, height: 8)
-                Text("zsh • \(session.sizeLabel)").font(.caption)
+                Text("zsh • \(session.sizeLabel)").font(.caption).foregroundStyle(UPTheme.textPrimary)
                 if let err = session.startError {
                     Text(err).font(.caption).foregroundStyle(.red).lineLimit(1)
                 }
                 Spacer()
-                Button("Nuovo") { manager.openTerminal() }.buttonStyle(.link).font(.caption).focusable(false)
+                Button("Nuovo") { manager.openTerminal() }.buttonStyle(.link).font(.caption).focusable(false).tint(UPTheme.cyan)
                 Button("Chiudi") { manager.close(session) }.buttonStyle(.link).font(.caption).focusable(false)
             }
             .padding(.horizontal, 8).padding(.vertical, 6)
-            .background(.bar)
+            .background(UPTheme.toolbarFill)
             Divider()
             EmbeddedTerminalNSView(session: session)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

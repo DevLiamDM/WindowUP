@@ -116,7 +116,7 @@ struct FloatingPanelContentView: View {
                     manager.update(updated, reloadWebView: true)
                     holder.load(addressText)
                 })
-                .textFieldStyle(.roundedBorder)
+                .textFieldStyle(UPDarkTextFieldStyle())
                 .font(.system(size: 11))
 
                 Button(action: { showSettings.toggle() }) {
@@ -128,9 +128,11 @@ struct FloatingPanelContentView: View {
                 }
             }
             .buttonStyle(.borderless)
+            .foregroundStyle(.white.opacity(0.9))
+            .tint(UPTheme.cyan)
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
-            .background(.bar)
+            .background(UPTheme.toolbarFill)
 
             Divider()
 

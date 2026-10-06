@@ -22,6 +22,7 @@
 		B1B2C3D4E5F6000D0000001 /* SCMirror.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F6000E0000001 /* SCMirror.swift */; };
 		B1B2C3D4E5F6000E0000001 /* YabaiPin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F6000F0000001 /* YabaiPin.swift */; };
 		B1B2C3D4E5F6000F0000001 /* FloatyPin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F600100000001 /* FloatyPin.swift */; };
+		B1B2C3D4E5F600100000002 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2C3D4E5F600100000002 /* Theme.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,7 @@
 		F1F2C3D4E5F6000E0000001 /* SCMirror.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SCMirror.swift"; sourceTree = "<group>"; };
 		F1F2C3D4E5F6000F0000001 /* YabaiPin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "YabaiPin.swift"; sourceTree = "<group>"; };
 		F1F2C3D4E5F600100000001 /* FloatyPin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FloatyPin.swift"; sourceTree = "<group>"; };
+		F1F2C3D4E5F600100000002 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Theme.swift"; sourceTree = "<group>"; };
 		F1F2C3D4E5F6000700000001 /* WindowUP.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "WindowUP.entitlements"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -89,6 +91,7 @@
 				F1F2C3D4E5F6000E0000001 /* SCMirror.swift */,
 				F1F2C3D4E5F6000F0000001 /* YabaiPin.swift */,
 				F1F2C3D4E5F600100000001 /* FloatyPin.swift */,
+				F1F2C3D4E5F600100000002 /* Theme.swift */,
 				F1F2C3D4E5F6000700000001 /* WindowUP.entitlements */,
 			);
 			path = WindowUP;
@@ -178,6 +181,7 @@
 				B1B2C3D4E5F6000D0000001 /* SCMirror.swift in Sources */,
 				B1B2C3D4E5F6000E0000001 /* YabaiPin.swift in Sources */,
 				B1B2C3D4E5F6000F0000001 /* FloatyPin.swift in Sources */,
+				B1B2C3D4E5F600100000002 /* Theme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

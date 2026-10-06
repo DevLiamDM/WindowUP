@@ -285,14 +285,15 @@ struct MirrorPanelView: View {
             HStack(spacing: 8) {
                 Circle().fill(windowGone ? .red : (stream.frame == nil ? .orange : .green)).frame(width: 8, height: 8)
                 Text(stream.status == "LIVE" ? "LIVE • solo vista" : stream.status).font(.caption.bold())
+                    .foregroundStyle(UPTheme.textPrimary)
                 Spacer()
                 Button("Vai alla finestra") {
                     if let m = mirror { manager.goToRealWindow(m) }
-                }.buttonStyle(.link).font(.caption)
+                }.buttonStyle(.link).font(.caption).tint(UPTheme.cyan)
                 Button("Chiudi") { manager.close(id: mirrorID) }.buttonStyle(.link).font(.caption)
             }
             .padding(.horizontal, 8).padding(.vertical, 6)
-            .background(.bar)
+            .background(UPTheme.toolbarFill)
             Divider()
             ZStack {
                 if let img = stream.frame {
@@ -330,21 +331,22 @@ struct MirrorPanelView: View {
                     Toggle("Click-through", isOn: Binding(
                         get: { m.clickThrough },
                         set: { v in var u = m; u.clickThrough = v; manager.update(u) }
-                    )).font(.caption)
+                    )).font(.caption).tint(UPTheme.accent)
                     Toggle("Extra-sopra", isOn: Binding(
                         get: { m.levelBoosted },
                         set: { v in var u = m; u.levelBoosted = v; manager.update(u) }
-                    )).font(.caption)
+                    )).font(.caption).tint(UPTheme.accent)
                     Slider(value: Binding(
                         get: { m.opacity },
                         set: { v in var u = m; u.opacity = v; manager.update(u) }
-                    ), in: 0.3...1.0).frame(width: 90)
+                    ), in: 0.3...1.0).frame(width: 90).tint(UPTheme.accent)
                 }
                 Spacer()
-                Text("live ~15fps").font(.caption2).foregroundStyle(.secondary)
+                Text("live ~15fps").font(.caption2).foregroundStyle(UPTheme.textSecondary)
             }
+            .foregroundStyle(UPTheme.textPrimary)
             .padding(.horizontal, 8).padding(.vertical, 5)
-            .background(.bar)
+            .background(UPTheme.toolbarFill)
         }
         .onAppear {
             if let m = mirror { stream.start(wid: m.windowNumber) }
